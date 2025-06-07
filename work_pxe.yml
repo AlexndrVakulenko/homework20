@@ -1,0 +1,137 @@
+---
+- name: work_with_PXE
+  hosts: pxeserver
+  become: true
+
+  tasks:
+ 
+  - name: Stop_firewall
+    ansible.builtin.systemd_service:
+     name: ufw
+     state: stopped
+     enabled: false
+
+  - name: update
+    apt:
+      update_cache=yes
+    tags:
+      - update apt
+
+  - name: Install_dnsmasq
+    apt:
+      name: dnsmasq
+
+  - name: Copy_pxe.conf
+    copy:
+      src: pxe_files/pxe.conf
+      dest: /etc/dnsmasq.d/pxe.conf
+      remote_src: no
+      mode: 0644
+      owner: root
+      group: root 
+
+  - name: Create TFTP directory
+    ansible.builtin.file:
+      path: /srv/tftp
+      owner: root
+      group: root
+      state: directory
+      mode: '0700'
+  
+  - name: Copy_ubuntu-24.04.1-netboot-amd64.tar.gz
+    copy:
+      src: pxe_files/ubuntu-24.04.1-netboot-amd64.tar.gz
+      dest: /root
+      remote_src: no
+      mode: 0644
+      owner: root
+      group: root 
+
+  - name: Unpack_noble-netboot-amd64
+    ansible.builtin.shell: |
+      cd /root &&
+      tar -xzvf ubuntu-24.04.1-netboot-amd64.tar.gz -C /srv/tftp
+
+  - name: Restart_dnsmasq
+    ansible.builtin.systemd_service:
+     name: dnsmasq
+     state: restarted
+
+  - name: Install_apache2
+    apt:
+      name: apache2
+
+  - name: Create_/srv/images
+    ansible.builtin.file:
+      path: /srv/images
+      owner: root
+      group: root
+      state: directory
+      mode: 0777
+
+  - name: Copy_noble-live-server
+    copy:
+      src: pxe_files/ubuntu-24.04.1-live-server-amd64.iso
+      dest: /srv/images/
+      remote_src: no
+      mode: 0777
+      owner: root
+      group: root 
+
+  - name: Copy_ks-server.conf
+    copy:
+      src: pxe_files/ks-server.conf
+      dest: /etc/apache2/sites-available/ks-server.conf
+      remote_src: no
+      mode: 0644
+      owner: root
+      group: root 
+
+  - name: Activate ks-server config
+    ansible.builtin.shell: sudo a2ensite ks-server.conf
+
+  - name: Copy pxelinux.cfg default
+    copy:
+      src: pxe_files/default
+      dest: /srv/tftp/amd64/pxelinux.cfg
+      remote_src: no
+      mode: 0644
+      owner: root
+      group: root 
+
+  - name: Create ks directory
+    ansible.builtin.file:
+      path: /srv/ks
+      owner: root
+      group: root
+      state: directory
+      mode: '0777'
+
+  - name: Copy user-data
+    copy:
+      src: pxe_files/user-data
+      dest: /srv/ks/user-data
+      remote_src: no
+      mode: 0644
+      owner: root
+      group: root 
+
+  - name: Copy meta-data
+    copy:
+      src: pxe_files/meta-data
+      dest: /srv/ks/meta-data
+      remote_src: no
+      mode: 0644
+      owner: root
+      group: root
+
+  - name: Restart_dnsmasq
+    ansible.builtin.systemd_service:
+     name: dnsmasq
+     state: restarted
+
+  - name: Restart_apache2
+    ansible.builtin.systemd_service:
+     name: apache2
+     state: restarted
+
