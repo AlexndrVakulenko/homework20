@@ -10,6 +10,8 @@ https://old-releases.ubuntu.com/releases/24.04/ubuntu-24.04-netboot-amd64.tar.gz
 https://old-releases.ubuntu.com/releases/24.04/ubuntu-24.04.1-live-server-amd64.iso
 
 
+В итоге содержимое папки pxe_files
+
 ![Image alt](https://github.com/AlexndrVakulenko/homework20/blob/main/screenshots/01_pxe_files_dir.png)
 
 
